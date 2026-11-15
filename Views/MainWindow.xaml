@@ -1,0 +1,165 @@
+<Window x:Class="ClipInspect.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ClipInspect" Width="1280" Height="800" MinWidth="900" MinHeight="560"
+        FontFamily="{StaticResource UiFont}" FontSize="13"
+        WindowStartupLocation="CenterScreen">
+  <Window.Resources>
+    <Style TargetType="Button">
+      <Setter Property="Padding" Value="10,4" />
+      <Setter Property="Margin" Value="0,0,6,0" />
+    </Style>
+    <Style x:Key="DataBox" TargetType="TextBox">
+      <Setter Property="IsReadOnly" Value="True" />
+      <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="TextWrapping" Value="NoWrap" />
+      <Setter Property="AcceptsReturn" Value="True" />
+      <Setter Property="AcceptsTab" Value="True" />
+      <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+      <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+      <Setter Property="IsUndoEnabled" Value="False" />
+    </Style>
+  </Window.Resources>
+  <DockPanel>
+    <!-- 上部: 操作と状態 -->
+    <StackPanel DockPanel.Dock="Top" Margin="8,8,8,4">
+      <WrapPanel>
+        <Button x:Name="CaptureButton" Content="取得" FontWeight="Bold" Click="Capture_Click"
+                ToolTip="今のクリップボードの形式の一覧を取得します" />
+        <Button x:Name="FetchAllButton" Content="全形式を取得" Click="FetchAll_Click"
+                ToolTip="未取得の形式の内容をまとめて取得します" />
+        <Button x:Name="CancelButton" Content="中止" Click="Cancel_Click" IsEnabled="False"
+                ToolTip="取得中の形式が終わったところで止めます" />
+        <Separator Width="12" Background="Transparent" />
+        <Button x:Name="SummaryButton" Content="概要レポートをコピー" Click="CopySummary_Click"
+                ToolTip="本文を含まない概要を Markdown でコピーします" />
+        <Button x:Name="DetailButton" Content="詳細レポートを確認…" Click="ShowDetail_Click"
+                ToolTip="チェックした形式の内容を含むレポートを作ります" />
+        <Separator Width="12" Background="Transparent" />
+        <Button x:Name="AboutButton" Content="バージョン情報" Click="About_Click" />
+      </WrapPanel>
+      <WrapPanel Margin="0,8,0,0">
+        <TextBlock Text="取得: " Foreground="#555" />
+        <TextBlock x:Name="CapturedAtText" Text="－" Margin="0,0,16,0" />
+        <TextBlock Text="状態: " Foreground="#555" />
+        <TextBlock x:Name="OutcomeText" Text="未取得" FontWeight="Bold" Margin="0,0,16,0" />
+        <TextBlock Text="形式: " Foreground="#555" />
+        <TextBlock x:Name="CountText" Text="－" Margin="0,0,16,0" />
+        <TextBlock Text="変更: " Foreground="#555" />
+        <TextBlock x:Name="ChangeText" Text="未取得" />
+      </WrapPanel>
+      <TextBox x:Name="MessageText" Margin="0,6,0,0" IsReadOnly="True" BorderThickness="0" Background="Transparent"
+               TextWrapping="Wrap" Text="コピーしてから［取得］を押してください。" />
+    </StackPanel>
+
+    <Grid Margin="8,0,8,8">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="1*" MinWidth="300" />
+        <ColumnDefinition Width="6" />
+        <ColumnDefinition Width="1*" MinWidth="360" />
+      </Grid.ColumnDefinitions>
+
+      <!-- 左: 形式一覧 -->
+      <DockPanel Grid.Column="0">
+        <TextBlock DockPanel.Dock="Top" Margin="0,0,0,4" Foreground="#555"
+                   Text="形式一覧（列挙の順。チェックした形式を詳細レポートに含める）" TextWrapping="Wrap" />
+        <ListView x:Name="FormatList" SelectionMode="Single" SelectionChanged="FormatList_SelectionChanged"
+                  VirtualizingPanel.IsVirtualizing="True">
+          <ListView.View>
+            <GridView>
+              <GridViewColumn Header="含める" Width="46">
+                <GridViewColumn.CellTemplate>
+                  <DataTemplate>
+                    <CheckBox IsChecked="{Binding Include, Mode=TwoWay}" HorizontalAlignment="Center" />
+                  </DataTemplate>
+                </GridViewColumn.CellTemplate>
+              </GridViewColumn>
+              <GridViewColumn Header="#" Width="32" DisplayMemberBinding="{Binding Index}" />
+              <GridViewColumn Header="ID" Width="60" DisplayMemberBinding="{Binding Id}" />
+              <GridViewColumn Header="名前" Width="180" DisplayMemberBinding="{Binding Name}" />
+              <GridViewColumn Header="種類" Width="66" DisplayMemberBinding="{Binding Kind}" />
+              <GridViewColumn Header="サイズ" Width="84" DisplayMemberBinding="{Binding Size}" />
+              <GridViewColumn Header="状態" Width="120" DisplayMemberBinding="{Binding Status}" />
+              <GridViewColumn Header="注記" Width="150" DisplayMemberBinding="{Binding Note}" />
+            </GridView>
+          </ListView.View>
+        </ListView>
+      </DockPanel>
+
+      <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Stretch" Background="#EEE" />
+
+      <!-- 右: 詳細 -->
+      <TabControl x:Name="RightTabs" Grid.Column="2">
+        <TabItem x:Name="FormatTab" Header="選択した形式">
+          <DockPanel Margin="4">
+            <TextBox x:Name="FormatHeader" DockPanel.Dock="Top" IsReadOnly="True" BorderThickness="0" Background="Transparent"
+                     TextWrapping="Wrap" FontFamily="{StaticResource MonoFont}" Text="形式を選んでください。" MaxHeight="160"
+                     VerticalScrollBarVisibility="Auto" />
+            <WrapPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">
+              <CheckBox x:Name="ShowControls" Content="制御文字を表示" VerticalAlignment="Center" Margin="0,0,12,0"
+                        Checked="ViewOption_Changed" Unchecked="ViewOption_Changed" />
+              <TextBlock Text="表示: " VerticalAlignment="Center" />
+              <ComboBox x:Name="ViewMode" Width="230" Margin="0,0,12,0" SelectionChanged="ViewOption_Changed" />
+              <Button x:Name="CopyContentButton" Content="この内容をコピー" Click="CopyContent_Click"
+                      ToolTip="表示中のタブの内容だけをコピーします" />
+              <Button x:Name="CopyImageButton" Content="画像をコピー" Click="CopyImage_Click"
+                      ToolTip="変換した画像をコピーします（元のデータとは別）" />
+            </WrapPanel>
+            <TabControl x:Name="DetailTabs" SelectionChanged="DetailTabs_SelectionChanged">
+              <TabItem Header="情報">
+                <TextBox x:Name="InfoText" Style="{StaticResource DataBox}" />
+              </TabItem>
+              <TabItem x:Name="ContentTab" Header="内容">
+                <Grid>
+                  <TextBox x:Name="ContentText" Style="{StaticResource DataBox}" />
+                  <DockPanel x:Name="ImagePanel" Visibility="Collapsed">
+                    <TextBox x:Name="ImageNote" DockPanel.Dock="Top" IsReadOnly="True" BorderThickness="0" Background="Transparent"
+                             TextWrapping="Wrap" Margin="0,0,0,4" />
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                      <Border HorizontalAlignment="Left" VerticalAlignment="Top">
+                        <Border.Background>
+                          <DrawingBrush TileMode="Tile" Viewport="0,0,16,16" ViewportUnits="Absolute">
+                            <DrawingBrush.Drawing>
+                              <GeometryDrawing Brush="#DDD" Geometry="M0,0 H1 V1 H0Z M1,1 H2 V2 H1Z" />
+                            </DrawingBrush.Drawing>
+                          </DrawingBrush>
+                        </Border.Background>
+                        <Image x:Name="PreviewImage" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                      </Border>
+                    </ScrollViewer>
+                  </DockPanel>
+                </Grid>
+              </TabItem>
+              <TabItem Header="16進数">
+                <TextBox x:Name="HexText" Style="{StaticResource DataBox}" />
+              </TabItem>
+            </TabControl>
+          </DockPanel>
+        </TabItem>
+        <TabItem x:Name="SummaryTab" Header="取得の概要">
+          <TextBox x:Name="SummaryText" Style="{StaticResource DataBox}" Margin="4" />
+        </TabItem>
+        <TabItem x:Name="DetailReportTab" Header="詳細レポート">
+          <DockPanel Margin="4">
+            <StackPanel DockPanel.Dock="Top">
+              <WrapPanel>
+                <CheckBox x:Name="OptPaths" Content="ファイルのパス・URL を含める" Margin="0,0,16,4" Checked="ReportOption_Changed" Unchecked="ReportOption_Changed" />
+                <CheckBox x:Name="OptSourceUrl" Content="SourceURL の全体" Margin="0,0,16,4" Checked="ReportOption_Changed" Unchecked="ReportOption_Changed" />
+                <CheckBox x:Name="OptProcessPath" Content="プロセスのフルパス" Margin="0,0,16,4" Checked="ReportOption_Changed" Unchecked="ReportOption_Changed" />
+              </WrapPanel>
+              <WrapPanel Margin="0,2,0,6">
+                <Button x:Name="CopyDetailButton" Content="コピー" Click="CopyDetail_Click" FontWeight="Bold" />
+                <TextBlock x:Name="DetailCount" VerticalAlignment="Center" Margin="0,0,12,0" />
+                <TextBlock VerticalAlignment="Center" Foreground="#A33" TextWrapping="Wrap"
+                           Text="コピーすると今のクリップボードの内容は置き換わります。" />
+              </WrapPanel>
+            </StackPanel>
+            <TextBox x:Name="DetailReportText" Style="{StaticResource DataBox}"
+                     Text="左の一覧で含める形式にチェックを付け、［詳細レポートを確認…］を押してください。" />
+          </DockPanel>
+        </TabItem>
+      </TabControl>
+    </Grid>
+  </DockPanel>
+</Window>

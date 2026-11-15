@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>ClipInspect</RootNamespace>
+    <AssemblyName>ClipInspect</AssemblyName>
+    <Version>1.0.0</Version>
+    <Copyright>© ja1bus</Copyright>
+    <ApplicationIcon>Resources/icon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <!--
+      配布は Microsoft Store の MSIX だけ（下の ClipInspectMsix の条件で .NET を内包する。仕様書 §18.2）。
+      通常のビルドは開発用（このPCの .NET 10 Desktop Runtime を使う）。独立した配布物は作らない。
+    -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
+    <!-- 表示は日本語だけ（仕様書 §35）。依存のサテライトを出力に含めない。 -->
+    <SatelliteResourceLanguages>ja</SatelliteResourceLanguages>
+
+    <!-- Core / Tests / NativeTests は別 csproj。既定の Compile 対象から除外する。 -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);Core/**;Tests/**;NativeTests/**;tools/**;publish/**;installer/**;public-repo/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <!-- Microsoft Store 用の MSIX。installer/msix/build-msix.ps1 が -p:ClipInspectMsix=true で publish する。 -->
+  <PropertyGroup Condition="'$(ClipInspectMsix)' == 'true'">
+    <SelfContained>true</SelfContained>
+    <PublishReadyToRun>true</PublishReadyToRun>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- ライセンスの全文は exe に埋め込み、バージョン情報の画面で表示する（ファイル・ブラウザーを開かない。仕様書 §36）。 -->
+    <EmbeddedResource Include="public-repo/LICENSE" LogicalName="ClipInspect.LICENSE" />
+    <EmbeddedResource Include="public-repo/THIRD-PARTY-NOTICES.md" LogicalName="ClipInspect.THIRD-PARTY-NOTICES.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="Core/ClipInspect.Core.csproj" />
+  </ItemGroup>
+</Project>

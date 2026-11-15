@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    WPF に依存しない処理: クリップボードの取得（IClipboardApi 越し）・解析・レポート・書き込みの手順と、Win32 の実装。
+    単体テスト（Tests/）と実際のクリップボードの試験（NativeTests/）の対象。外部パッケージには依存しない。
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>ClipInspect.Core</RootNamespace>
+    <!-- クリップボードのメモリをポインターで読むため。 -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+</Project>

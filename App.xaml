@@ -1,0 +1,10 @@
+<Application x:Class="ClipInspect.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="Views/MainWindow.xaml">
+  <Application.Resources>
+    <FontFamily x:Key="UiFont">Yu Gothic UI</FontFamily>
+    <!-- データ・パスは等幅。\ が ¥ にならないフォントを先に置く（仕様書 §35）。 -->
+    <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas, BIZ UDGothic, MS Gothic</FontFamily>
+  </Application.Resources>
+</Application>
